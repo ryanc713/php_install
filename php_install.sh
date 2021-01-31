@@ -19,7 +19,7 @@ echo "What version of PHP do you want to install? The choices are:
     4. PHP7.2
     5. PHP7.3
     6. PHP7.4
-    7. PHP8.0""
+    7. PHP8.0"
 read opt1
 case $opt1 in
     1)
