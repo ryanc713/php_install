@@ -17,7 +17,9 @@ echo "What version of PHP do you want to install? The choices are:
     2. PHP7.0
     3. PHP7.1
     4. PHP7.2
-    5. PHP7.3"
+    5. PHP7.3
+    6. PHP7.4
+    7. PHP8.0""
 read opt1
 case $opt1 in
     1)
@@ -61,6 +63,24 @@ case $opt1 in
         sudo update-alternatives --set php /usr/bin/php7.3
         sudo a2dismod $php_version
         sudo a2enmod php7.3
+        sudo systemctl restart apache2
+        echo "Operation Completed. Check PHP version to verify"
+        exit 0
+        ;;
+    6)
+        sudo apt install php7.4 php7.4-cli php7.4-common -y
+        sudo update-alternatives --set php /usr/bin/php7.4
+        sudo a2dismod $php_version
+        sudo a2enmod php7.4
+        sudo systemctl restart apache2
+        echo "Operation Completed. Check PHP version to verify"
+        exit 0
+        ;;
+     7)
+        sudo apt install php8.0 php8.0-common php8.0-cli php8.0-mysql -y
+        sudo update-alternatives --set php /usr/bin/php8.0
+        sudo a2dismod $php_version
+        sudo a2enmod php8.0
         sudo systemctl restart apache2
         echo "Operation Completed. Check PHP version to verify"
         exit 0
