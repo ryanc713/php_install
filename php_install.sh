@@ -5,7 +5,7 @@
 # Description: Installs a different version of PHP for instance if a lower version is required to run an app.
 php_version=$(php -r "echo PHP_VERSION;")
 
-sudo apt install software-properties-common
+sudo apt install software-properties-common -y
 sudo add-apt-repository ppa:ondrej/php && sudo apt update
 clear
 
@@ -68,7 +68,7 @@ case $opt1 in
         exit 0
         ;;
     6)
-        sudo apt install php7.4 php7.4-cli php7.4-common -y
+        sudo apt install php7.4 php7.4-cli php7.4-common php7.4-mysql php7.4-opcache php7.4-zip php7.4-fpm  -y
         sudo update-alternatives --set php /usr/bin/php7.4
         sudo a2dismod $php_version
         sudo a2enmod php7.4
