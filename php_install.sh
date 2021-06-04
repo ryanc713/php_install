@@ -5,14 +5,33 @@
 # Description: Installs a different version of PHP for instance if a lower version is required to run an app.
 php_version=$(php -r "echo PHP_VERSION;")
 
-sudo apt install software-properties-common -y
-sudo add-apt-repository ppa:ondrej/php && sudo apt update
-clear
-
-read -p "This script will install your choice of PHP versions and will 
-also configure it to be the default PHP version running on your server."
-echo ""
-echo "What version of PHP do you want to install? The choices are:
+header() {
+    clear
+    echo "***********************************"
+    echo "*          PHP Installer          *"
+    echo "***********************************"
+    echo ""         
+}
+latest() {
+    apt install software-properties-common -y &>/dev/null
+    header
+    echo "Installing PHP Repository.."
+    add-apt-repository ppa:ondrej/php -y &>/dev/null && apt update &>/dev/null
+    echo "Complete."
+    echo "Installing Latest version of PHP.."
+    apt install php php-mysql php-cli php-fpm -y &>/dev/null
+    echo "Installation Complete"
+    sleep 2
+    exit 0
+}
+prompt() {
+    header
+    echo "Which version of PHP do you want to install?"
+    echo ""
+    echo "WARNING - If you have PHP already installed, after this script"
+    echo "it will no longer be the default version running on this server."
+    echo ""
+    echo "What version of PHP do you want to install? Choose [1-7]
     1. PHP5.6
     2. PHP7.0
     3. PHP7.1
@@ -20,15 +39,48 @@ echo "What version of PHP do you want to install? The choices are:
     5. PHP7.3
     6. PHP7.4
     7. PHP8.0"
-read opt1
+    read opt1
+}
+
+php -v &>/dev/null
+    if [[ $? -ne 0 ]]; then
+        header
+        echo "PHP is not currently installed on this system. Do you want"
+        echo "to install the latest version of php?"
+        read opt2
+        case $opt2 in
+            Y|yes|Yes|y)
+                latest
+                ;;
+            N|no|No|n)
+                prompt
+                ;;
+            *)
+                echo "$opt2 was not a valid choice."
+                exit 1
+                ;;
+        esac    
+    else
+        header
+        echo "Adding PHP Repository.."
+        apt install software-properties-common -y &>/dev/null
+        add-apt-repository ppa:ondrej/php -y &>/dev/null 
+        header
+        echo "Updating System.."
+        apt update &>/dev/null
+        echo "Done"
+
+prompt
+
 case $opt1 in
     1)
-        sudo apt install php5.6 php5.6-cli php5.6-xml php5.6-mysql -y
-        sudo update-alternatives --set php /usr/bin/php5.6
-        sudo a2dismod $php_version
-        sudo a2enmod php5.6
-        sudo systemctl restart apache2
-        echo "Operation Completed. Check PHP version to verify"
+        header
+        echo "Installing PHP and basic Modules.."
+        sudo apt install php5.6 php5.6-cli php5.6-xml php5.6-mysql -y &>/dev/null
+        echo "Set as the default version.."
+        sudo update-alternatives --set php /usr/bin/php5.6 &>/dev/null
+        echo "Done."
+        sleep 2
         exit 0
         ;;
     2)
