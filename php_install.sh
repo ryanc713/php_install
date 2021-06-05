@@ -2,8 +2,7 @@
 #
 # Author: Ryan Cook
 # Date: 01/05/2021
-# Description: Installs a different version of PHP for instance if a lower version is required to run an app.
-php_version=$(php -r "echo PHP_VERSION;")
+# Description: Installs Latest Release or Older Releases of PHP depending on user input.
 
 header() {
     clear
@@ -13,131 +12,110 @@ header() {
     echo ""         
 }
 latest() {
+# Install Software-properties-common file and install the ppa:ondrej repository
     apt install software-properties-common -y &>/dev/null
     header
     echo "Installing PHP Repository.."
     add-apt-repository ppa:ondrej/php -y &>/dev/null && apt update &>/dev/null
     echo "Complete."
-    echo "Installing Latest version of PHP.."
-    apt install php php-mysql php-cli php-fpm -y &>/dev/null
-    echo "Installation Complete"
+# Install Latest version of PHP
+
+    if [[ "$apache_ws" == yes ]]; then
+        apt install libapache2-mod-php -y &>/dev/null
+    fi
+    if [[ "$mysql_db" == yes ]]; then
+        apt install php"$version"-mysql -y &>/dev/null
+    fi
+    apt install php"$version" php"$version"-fpm -y &>/dev/null
+    echo "Installation Complete.."
+    update-alternatives --set php /usr/bin/php"$version" &>/dev/null
     sleep 2
-    exit 0
 }
 prompt() {
     header
     echo "Which version of PHP do you want to install?"
     echo ""
-    echo "WARNING - If you have PHP already installed, after this script"
-    echo "it will no longer be the default version running on this server."
+    echo "WARNING - This script changes the default version of PHP currently being run"
+    echo "on your server. If you have an app that requiures a specific version of PHP,"
+    echo "it will not work after this script is done."
     echo ""
-    echo "What version of PHP do you want to install? Choose [1-7]
-    1. PHP5.6
-    2. PHP7.0
-    3. PHP7.1
-    4. PHP7.2
-    5. PHP7.3
-    6. PHP7.4
-    7. PHP8.0"
-    read opt1
+    echo "Do you want to continue with the installation?" 
+    read continue
+    case $continue in
+        Y|y|yes|Yes)
+            header
+            echo "What version of PHP do you want to install? [1-7]:
+            1. 5.6
+            2. 7.0
+            3. 7.1
+            4. 7.2
+            5. 7.3
+            6. 7.4
+            7. 8.0"
+            read option
+                case $option in
+                    1) version=5.6
+                        ;;
+                    2) version=7.0
+                        ;;
+                    3) version=7.1
+                        ;;
+                    4) version=7.2
+                        ;;
+                    5) version=7.3
+                        ;;
+                    6) version=7.4
+                        ;;
+                    7) version=8.0
+                        ;;
+                    *) header
+                        echo "$option is not a valid choice.."
+                        echo "Exiting.."
+                        sleep 2
+                        exit 1
+                esac
+            check_apps
+            php_install    
+            ;;
+        N|n|no|No)
+            echo "Exiting Script.."
+            sleep 2
+            exit 0
+            ;;
+        *)
+            echo "$continue was not a valid option. Exiting.."
+            sleep 2
+            exit 3
+            ;;
+    esac
 }
-
-php -v &>/dev/null
+if [[ $EUID -ne 0 ]]; then
+    header
+    echo "Script must be ran with root privileges.."
+    sleep 2
+    exit 1
+else
+    header
+    echo "Checking for PHP installation.."
+    command -v php &>/dev/null
     if [[ $? -ne 0 ]]; then
         header
-        echo "PHP is not currently installed on this system. Do you want"
-        echo "to install the latest version of php?"
-        read opt2
-        case $opt2 in
-            Y|yes|Yes|y)
+        echo "No version of PHP has been detected.."
+        echo "Do you want to install the latest version?"
+        read opt
+        case $opt in
+            y|Y|yes|Yes)
                 latest
                 ;;
-            N|no|No|n)
+            N|n|no|No)
                 prompt
                 ;;
             *)
-                echo "$opt2 was not a valid choice."
+                echo "$opt was not a valid choice.."
+                echo "Exiting.."
+                sleep 2
                 exit 1
                 ;;
-        esac    
-    else
-        header
-        echo "Adding PHP Repository.."
-        apt install software-properties-common -y &>/dev/null
-        add-apt-repository ppa:ondrej/php -y &>/dev/null 
-        header
-        echo "Updating System.."
-        apt update &>/dev/null
-        echo "Done"
-
-prompt
-
-case $opt1 in
-    1)
-        header
-        echo "Installing PHP and basic Modules.."
-        sudo apt install php5.6 php5.6-cli php5.6-xml php5.6-mysql -y &>/dev/null
-        echo "Set as the default version.."
-        sudo update-alternatives --set php /usr/bin/php5.6 &>/dev/null
-        echo "Done."
-        sleep 2
-        exit 0
-        ;;
-    2)
-        sudo apt install php7.0 php7.0-cli php7.0-xml php7.0-mysql -y
-        sudo update-alternatives --set php /usr/bin/php7.0
-        sudo a2dismod $php_version
-        sudo a2enmod php7.0
-        sudo systemctl restart apache2
-        echo "Operation Completed. Check PHP version to verify"
-        exit 0
-        ;;
-    3)
-        sudo apt install php7.1 php7.1-cli php7.1-xml php7.1-mysql -y
-        sudo update-alternatives --set php /usr/bin/php7.1
-        sudo a2dismod $php_version
-        sudo a2enmod php7.1
-        sudo systemctl restart apache2
-        echo "Operation Completed. Check PHP version to verify"
-        exit 0
-        ;;
-    4)
-        sudo apt install php7.2 php7.2-cli php7.2-xml php7.2-mysql -y
-        sudo update-alternatives --set php /usr/bin/php7.2
-        sudo a2dismod $php_version
-        sudo a2enmod php7.2
-        sudo systemctl restart apache2
-        echo "Operation Completed. Check PHP version to verify"
-        exit 0
-        ;;
-    5)
-        sudo apt install php7.3 php7.3-cli php7.3-xml php7.3-mysql -y
-        sudo update-alternatives --set php /usr/bin/php7.3
-        sudo a2dismod $php_version
-        sudo a2enmod php7.3
-        sudo systemctl restart apache2
-        echo "Operation Completed. Check PHP version to verify"
-        exit 0
-        ;;
-    6)
-        sudo apt install php7.4 php7.4-cli php7.4-common php7.4-mysql php7.4-opcache php7.4-zip php7.4-fpm  -y
-        sudo update-alternatives --set php /usr/bin/php7.4
-        sudo a2dismod $php_version
-        sudo a2enmod php7.4
-        sudo systemctl restart apache2
-        echo "Operation Completed. Check PHP version to verify"
-        exit 0
-        ;;
-     7)
-        sudo apt install php8.0 php8.0-common php8.0-cli php8.0-mysql -y
-        sudo update-alternatives --set php /usr/bin/php8.0
-        sudo a2dismod $php_version
-        sudo a2enmod php8.0
-        sudo systemctl restart apache2
-        echo "Operation Completed. Check PHP version to verify"
-        exit 0
-        ;;
-    *)
-        echo "Not a valid Option."
-        ;;
-esac
+        esac
+    fi
+fi
